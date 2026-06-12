@@ -24,10 +24,19 @@ import os
 
 from fastapi import FastAPI, HTTPException, Security, Depends
 from fastapi.security.api_key import APIKeyHeader
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from utils.mock_llm import ask
 
 app = FastAPI(title="Agent with API Key Auth")
+
+# CORS — để trang demo HTML (origin khác) gọi được API từ trình duyệt
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_methods=["GET", "POST"],
+    allow_headers=["X-API-Key", "Content-Type"],
+)
 
 # ──────────────────────────────────────
 # API Key setup

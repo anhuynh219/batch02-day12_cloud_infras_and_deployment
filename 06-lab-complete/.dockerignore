@@ -1,11 +1,22 @@
-__pycache__/
-*.pyc
+# Giảm build context + tránh đưa rác/secret vào image
+node_modules
+dist
+dist-ssr
+
+# Secrets — KHÔNG bao giờ đưa .env vào image
 .env
 .env.*
+*.local
 !.env.example
-venv/
-.venv/
-.git/
-*.md
-tests/
+
+# Logs
+*.log
+logs
+
+# VCS / editor / docs
+.git
+.gitignore
+.vscode
+.idea
 .DS_Store
+*.md

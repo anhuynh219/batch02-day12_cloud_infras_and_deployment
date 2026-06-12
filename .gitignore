@@ -32,5 +32,7 @@ env/
 Thumbs.db
 
 # ── Docker volumes (local dev) ─────────────────────��──────
-data/
-volumes/
+# Chỉ ignore data/ và volumes/ ở GỐC repo (leading slash) — tránh nuốt
+# 06-lab-complete/src/data/ (khiến railway up bỏ sót → build fail).
+/data/
+/volumes/

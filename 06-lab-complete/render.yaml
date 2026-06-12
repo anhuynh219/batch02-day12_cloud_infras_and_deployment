@@ -1,6 +1,8 @@
+# Render Blueprint (Infrastructure as Code) — build từ Dockerfile.
+# Set GEMINI_API_KEY (sync:false) trên dashboard sau khi connect repo.
 services:
   - type: web
-    name: ai-agent-production
+    name: vinwonders-scheduler
     runtime: docker
     region: singapore
     plan: starter
@@ -11,13 +13,13 @@ services:
         value: production
       - key: APP_VERSION
         value: "1.0.0"
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: AGENT_API_KEY
-        generateValue: true
-      - key: JWT_SECRET
-        generateValue: true
-      - key: DAILY_BUDGET_USD
-        value: "5.0"
+      - key: GEMINI_API_KEY
+        sync: false           # nhập thủ công trên dashboard
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: ALLOWED_ORIGINS
+        value: "*"
       - key: RATE_LIMIT_PER_MINUTE
         value: "20"
+      - key: DAILY_CALL_BUDGET
+        value: "1000"

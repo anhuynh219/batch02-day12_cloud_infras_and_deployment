@@ -1,33 +1,24 @@
-version: "3.9"
-
+# ============================================================
+# Local full-stack: 1 container chạy cả frontend (dist) + agent API
+#   docker compose up --build
+#   → http://localhost:8787  (web + /api/plan + /health)
+# Secrets đọc từ .env.local (KHÔNG commit).
+# ============================================================
 services:
   agent:
     build: .
     ports:
-      - "8000:8000"
+      - "8787:8787"
     environment:
-      - ENVIRONMENT=staging
-      - APP_NAME=Production AI Agent
-      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=production
+      - PORT=8787
     env_file:
       - .env.local
-    depends_on:
-      redis:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c",
-             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "node", "-e",
+             "fetch('http://localhost:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
     restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3

@@ -217,4 +217,6 @@ def ready():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
+    # reload=True yêu cầu import string "app:app", không nhận app object
+    reload = os.getenv("ENVIRONMENT", "development") == "development"
+    uvicorn.run("app:app" if reload else app, host="0.0.0.0", port=port, reload=reload)

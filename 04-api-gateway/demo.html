@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Day 12 — API Gateway Demo</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --line: #334155; --muted: #94a3b8;
+    --txt: #e2e8f0; --accent: #6366f1; --accent2: #818cf8;
+    --ok: #22c55e; --warn: #f59e0b; --err: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 50% -10%, #1e293b, var(--bg));
+    color: var(--txt); min-height: 100vh; padding: 32px 16px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    flex: 1; padding: 10px; border: 1px solid var(--line); background: var(--card);
+    color: var(--muted); border-radius: 10px; cursor: pointer; font-size: 14px;
+    transition: .15s; text-align: center;
+  }
+  .tab.active { color: #fff; border-color: var(--accent); background: #312e81; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 14px; margin: 0 0 14px; color: var(--accent2); letter-spacing: .3px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea {
+    width: 100%; padding: 10px 12px; background: #0b1220; border: 1px solid var(--line);
+    border-radius: 8px; color: var(--txt); font-size: 14px; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  button {
+    margin-top: 12px; padding: 10px 16px; border: none; border-radius: 8px;
+    background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: .15s;
+  }
+  button:hover { background: var(--accent2); }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+  button.ghost:hover { border-color: var(--accent); color: #fff; }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btnrow button { flex: 1; min-width: 120px; }
+  .hidden { display: none; }
+  .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px;
+    font-weight: 700; font-family: ui-monospace, monospace;
+  }
+  .b-ok { background: rgba(34,197,94,.15); color: var(--ok); }
+  .b-warn { background: rgba(245,158,11,.15); color: var(--warn); }
+  .b-err { background: rgba(239,68,68,.15); color: var(--err); }
+  .answer {
+    margin-top: 12px; padding: 12px 14px; background: #0b1220; border-radius: 8px;
+    border-left: 3px solid var(--accent); font-size: 14px; line-height: 1.5;
+  }
+  pre {
+    margin: 10px 0 0; padding: 12px; background: #0b1220; border-radius: 8px;
+    font-size: 12px; color: var(--muted); overflow-x: auto; white-space: pre-wrap;
+    word-break: break-word; max-height: 220px;
+  }
+  .token { font-family: ui-monospace, monospace; font-size: 11px; color: var(--ok); word-break: break-all; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chip { font-family: ui-monospace, monospace; font-size: 12px; padding: 3px 8px; border-radius: 6px; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+  code { background: #0b1220; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🛡️ Day 12 — API Gateway Demo</h1>
+  <div class="sub">Demo lớp bảo vệ trước AI agent: API Key (develop) &amp; JWT + Rate Limit + Cost Guard (production).</div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="apikey" onclick="switchTab('apikey')">🔑 API Key (develop)</div>
+    <div class="tab" data-tab="jwt" onclick="switchTab('jwt')">🔐 JWT (production)</div>
+  </div>
+
+  <!-- ================= API KEY MODE ================= -->
+  <div id="panel-apikey">
+    <div class="card">
+      <h2>CẤU HÌNH</h2>
+      <label>Base URL (develop app)</label>
+      <input id="ak-url" value="http://localhost:8000" />
+      <label>API Key (header X-API-Key)</label>
+      <input id="ak-key" value="my-secret-key" />
+    </div>
+    <div class="card">
+      <h2>HỎI AGENT</h2>
+      <label>Câu hỏi</label>
+      <textarea id="ak-q">What is docker?</textarea>
+      <div class="btnrow">
+        <button onclick="askApiKey('valid')">Gửi (key hợp lệ)</button>
+        <button class="ghost" onclick="askApiKey('none')">Test thiếu key → 401</button>
+        <button class="ghost" onclick="askApiKey('wrong')">Test sai key → 403</button>
+      </div>
+      <div id="ak-out"></div>
+    </div>
+  </div>
+
+  <!-- ================= JWT MODE ================= -->
+  <div id="panel-jwt" class="hidden">
+    <div class="card">
+      <h2>CẤU HÌNH</h2>
+      <label>Base URL (production app)</label>
+      <input id="jw-url" value="http://localhost:8001" />
+    </div>
+    <div class="card">
+      <h2>1 · ĐĂNG NHẬP LẤY JWT</h2>
+      <div class="row">
+        <div><label>Username</label><input id="jw-user" value="student" /></div>
+        <div><label>Password</label><input id="jw-pass" value="demo123" /></div>
+      </div>
+      <button onclick="login()">Đăng nhập</button>
+      <div class="note">Demo: <code>student/demo123</code> (10 req/phút) · <code>teacher/teach456</code> (100 req/phút)</div>
+      <div id="jw-token"></div>
+    </div>
+    <div class="card">
+      <h2>2 · HỎI AGENT (cần token)</h2>
+      <label>Câu hỏi</label>
+      <textarea id="jw-q">What is deployment?</textarea>
+      <div class="btnrow">
+        <button onclick="askJwt()">Hỏi agent</button>
+        <button class="ghost" onclick="spamRateLimit()">🔥 Spam 12 lần (test rate limit)</button>
+        <button class="ghost" onclick="getUsage()">📊 Xem usage</button>
+      </div>
+      <div id="jw-out"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    ⚠️ Nhớ chạy server với CORS mở cho trang này:<br />
+    develop: <code>ALLOWED_ORIGINS=* … python app.py</code> (mặc định đã <code>*</code>)<br />
+    production: <code>$env:ALLOWED_ORIGINS="*"; … python app.py</code>
+  </div>
+</div>
+
+<script>
+let JWT = null;
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(el =>
+    el.classList.toggle('active', el.dataset.tab === t));
+  document.getElementById('panel-apikey').classList.toggle('hidden', t !== 'apikey');
+  document.getElementById('panel-jwt').classList.toggle('hidden', t !== 'jwt');
+}
+
+function badge(status) {
+  const cls = status < 300 ? 'b-ok' : status < 500 ? 'b-warn' : 'b-err';
+  return `<span class="badge ${cls}">HTTP ${status}</span>`;
+}
+
+function render(elId, status, data) {
+  const el = document.getElementById(elId);
+  const answer = data && data.answer
+    ? `<div class="answer">${escapeHtml(data.answer)}</div>` : '';
+  el.innerHTML = `<div style="margin-top:14px">${badge(status)}</div>${answer}
+    <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+async function call(url, opts) {
+  try {
+    const res = await fetch(url, opts);
+    let data;
+    try { data = await res.json(); } catch { data = { _raw: await res.text() }; }
+    return { status: res.status, data };
+  } catch (e) {
+    return { status: 0, data: { error: 'Không kết nối được — server chạy chưa? CORS mở chưa?', detail: String(e) } };
+  }
+}
+
+// ---------- API KEY ----------
+async function askApiKey(mode) {
+  const base = document.getElementById('ak-url').value.replace(/\/$/, '');
+  const q = encodeURIComponent(document.getElementById('ak-q').value);
+  const headers = {};
+  if (mode === 'valid') headers['X-API-Key'] = document.getElementById('ak-key').value;
+  if (mode === 'wrong') headers['X-API-Key'] = 'sai-key-co-tinh';
+  const { status, data } = await call(`${base}/ask?question=${q}`, { method: 'POST', headers });
+  render('ak-out', status, data);
+}
+
+// ---------- JWT ----------
+async function login() {
+  const base = document.getElementById('jw-url').value.replace(/\/$/, '');
+  const body = JSON.stringify({
+    username: document.getElementById('jw-user').value,
+    password: document.getElementById('jw-pass').value,
+  });
+  const { status, data } = await call(`${base}/auth/token`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body,
+  });
+  const el = document.getElementById('jw-token');
+  if (status === 200 && data.access_token) {
+    JWT = data.access_token;
+    el.innerHTML = `<div style="margin-top:12px">${badge(status)} ✅ Đã có token</div>
+      <div class="answer token">${escapeHtml(JWT)}</div>`;
+  } else {
+    JWT = null;
+    el.innerHTML = `<div style="margin-top:12px">${badge(status)}</div>
+      <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+  }
+}
+
+function authHeaders(extra = {}) {
+  const h = { ...extra };
+  if (JWT) h['Authorization'] = 'Bearer ' + JWT;
+  return h;
+}
+
+async function askJwt() {
+  if (!JWT) return alert('Hãy đăng nhập lấy token trước!');
+  const base = document.getElementById('jw-url').value.replace(/\/$/, '');
+  const body = JSON.stringify({ question: document.getElementById('jw-q').value });
+  const { status, data } = await call(`${base}/ask`, {
+    method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body,
+  });
+  render('jw-out', status, data);
+}
+
+async function spamRateLimit() {
+  if (!JWT) return alert('Hãy đăng nhập lấy token trước!');
+  const base = document.getElementById('jw-url').value.replace(/\/$/, '');
+  const body = JSON.stringify({ question: 'spam test' });
+  const out = document.getElementById('jw-out');
+  out.innerHTML = '<div style="margin-top:14px" class="note">Đang gửi 12 request liên tiếp…</div><div class="chips" id="jw-chips"></div>';
+  const chips = document.getElementById('jw-chips');
+  for (let i = 1; i <= 12; i++) {
+    const { status } = await call(`${base}/ask`, {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body,
+    });
+    const cls = status < 300 ? 'b-ok' : status < 500 ? 'b-warn' : 'b-err';
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + cls;
+    chip.textContent = `#${i}: ${status}`;
+    chips.appendChild(chip);
+  }
+  const tip = document.createElement('div');
+  tip.className = 'note';
+  tip.innerHTML = 'student giới hạn <b>10 req/phút</b> → các request cuối trả <b>429</b>.';
+  out.appendChild(tip);
+}
+
+async function getUsage() {
+  if (!JWT) return alert('Hãy đăng nhập lấy token trước!');
+  const base = document.getElementById('jw-url').value.replace(/\/$/, '');
+  const { status, data } = await call(`${base}/me/usage`, { method: 'GET', headers: authHeaders() });
+  render('jw-out', status, data);
+}
+</script>
+</body>
+</html>

@@ -10,11 +10,17 @@ Kịch bản:
 Chạy sau khi docker compose up:
     python test_stateless.py
 """
+import os
+import sys
 import json
 import urllib.request
 import urllib.error
 
-BASE_URL = "http://localhost:8080"
+# Windows console mặc định cp1252 — ép UTF-8 để in emoji/tiếng Việt không lỗi
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 session_id = None
 
 
